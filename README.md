@@ -73,7 +73,7 @@ The pmp-library is provided under a simple and flexible MIT-style
 [license](https://github.com/pmp-library/pmp-library/blob/master/LICENSE.txt),
 thereby allowing for both open-source and commercial usage.
 
-## Difference of forked version
+## Differences of forked version
 
 A new remeshing approach for HRTF calculation was implemented. Therefore, changes in SurfaceRemeshing.cpp and MeshProcessingViewer.cpp have been made. It is necessary to set the "ear" parameter to either "left" or "right" to determine the ipsilateral ear. If ear = "none" is set, the classic adaptive remeshing is performed.
 
@@ -81,11 +81,9 @@ The new remeshing for HRTF is a combined approach of:
 
 Marion Dunyach u. a. “Adaptive Remeshing for Real-Time Mesh Deforma-
 tion”. en. In: Eurographics Short Papers (2013), S. 4. issn: 1017-4656.
-url: https : / / www . researchgate . net / publication / 237008692 _
-Adaptive_Remeshing_for_Real-Time_Mesh_Deformation.
+url: https://www.researchgate.net/publication/237008692_Adaptive_Remeshing_for_Real-Time_Mesh_Deformation.
 
 Harald Ziegelwanger, Wolfgang Kreuzer und Piotr Majdak. “A priori mesh
 grading for the numerical calculation of the head-related transfer functi-
 ons”. en. In: Applied Acoustics 114 (Dez. 2016), S. 99–110. issn: 0003-
-682X. doi: 10.1016/j.apacoust.2016.07.005. url: http://www.
-sciencedirect.com/science/article/pii/S0003682X1630192X
+682X. doi: 10.1016/j.apacoust.2016.07.005. url: http://www.sciencedirect.com/science/article/pii/S0003682X1630192X
