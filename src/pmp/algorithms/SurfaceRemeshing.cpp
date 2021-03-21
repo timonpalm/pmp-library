@@ -38,7 +38,7 @@ void SurfaceRemeshing::uniform_remeshing(Scalar edge_length,
     use_projection_ = use_projection;
     target_edge_length_ = edge_length;
 
-    preprocessing();
+    preprocessing("none");
 
     for (unsigned int i = 0; i < iterations; ++i)
     {
@@ -62,7 +62,8 @@ void SurfaceRemeshing::adaptive_remeshing(Scalar min_edge_length,
                                           Scalar max_edge_length,
                                           Scalar approx_error,
                                           unsigned int iterations,
-                                          bool use_projection)
+                                          bool use_projection,
+                                          std::string ear)
 {
     uniform_ = false;
     min_edge_length_ = min_edge_length;
@@ -70,7 +71,7 @@ void SurfaceRemeshing::adaptive_remeshing(Scalar min_edge_length,
     approx_error_ = approx_error;
     use_projection_ = use_projection;
 
-    preprocessing();
+    preprocessing(ear);
 
     for (unsigned int i = 0; i < iterations; ++i)
     {
@@ -90,7 +91,7 @@ void SurfaceRemeshing::adaptive_remeshing(Scalar min_edge_length,
     postprocessing();
 }
 
-void SurfaceRemeshing::preprocessing()
+void SurfaceRemeshing::preprocessing(std::string ear)
 {
     // properties
     vfeature_ = mesh_.vertex_property<bool>("v:feature", false);
@@ -162,6 +163,34 @@ void SurfaceRemeshing::preprocessing()
         SurfaceCurvature curv(mesh_);
         curv.analyze_tensor(1);
 
+        auto bb = mesh_.bounds();
+        std::string unit = "mm";
+        BoundingBox b2;
+
+        if (ear != "none")
+        {
+              
+            // check the size of head to determine the unit
+            if ((bb.max()[1] - bb.min()[1]) < 1.0 )
+            {
+                unit = "m";
+                max_edge_length_ *= 0.001;
+                min_edge_length_ *= 0.001;
+                approx_error_ *= 0.001;
+            }
+
+            // create a smaller bounding box close to the ears.
+            // this is necessary for head+torso mesh, because otherwise the shoulders would
+            // determine the max bounding box
+            for (auto p : mesh_.positions())
+            {
+                if ((p[2] > -0.05 and unit == "m") or (p[2] > -50.0 and unit == "mm"))
+                {
+                    b2 += p;
+                }
+            }
+        }
+
         // use vsizing_ to store/smooth curvatures to avoid another vertex property
 
         // curvature values for feature vertices and boundary vertices
@@ -203,10 +232,48 @@ void SurfaceRemeshing::preprocessing()
             }
         }
 
+        // approximate the blocked ear canals
+        float min_y = b2.min()[1] + (b2.max()[1] - b2.min()[1]) * 0.15; // right
+        float min_z = bb.min()[2] + (bb.max()[2] - bb.min()[2]) * 0.22;
+        float max_y = b2.max()[1] - (b2.max()[1] - b2.min()[1]) * 0.15; // left
+
         // now convert per-vertex curvature into target edge length
         for (auto v : mesh_.vertices())
         {
             Scalar c = vsizing_[v];
+
+            const Point& p = points_[v];
+
+            if (ear != "none")
+            {
+                
+                // adjust curvature for mesh in unit mm
+                if (unit == "mm")
+                {
+                    c *= 1000;
+                }
+
+                // y distance of vertex to left and right ear canal
+                float d_r_ear = p[1]-min_y;
+                float d_l_ear = p[1]-max_y;
+                
+                // increase edge length at the cutting area to torso
+                if (p[2] < min_z and c > 100) 
+                {
+                    c /= 5;
+                }
+                
+                // adjust edgelength based on distance to ipsilateral ear
+                if (ear == "right")
+                {
+                    c = c /( 1.5 * sqrt(p[0]*p[0] + p[2]*p[2] + 10*d_r_ear*d_r_ear));
+                }
+                else 
+                {
+                    c = c /( 1.5 * sqrt(p[0]*p[0] + p[2]*p[2] + 10*d_l_ear*d_l_ear));
+                }
+
+            }
 
             // get edge length from curvature
             const Scalar r = 1.0 / c;
@@ -224,10 +291,15 @@ void SurfaceRemeshing::preprocessing()
                 h = e * 3.0 / sqrt(3.0);
             }
 
-            // clamp to min. and max. edge length
+            // clamp to min. and max. edge length and set edgelength at contralateral ear
+            // to max
             if (h < min_edge_length_)
                 h = min_edge_length_;
             else if (h > max_edge_length_)
+                h = max_edge_length_;
+            else if (ear == "right" && p[1] >= max_y)
+                h = max_edge_length_;
+            else if (ear == "left" && p[1] <= min_y)
                 h = max_edge_length_;
 
             // store target edge length

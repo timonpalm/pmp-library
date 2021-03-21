@@ -41,10 +41,10 @@ public:
     //! \param use_projection use back-projection to the input surface
     void adaptive_remeshing(Scalar min_edge_length, Scalar max_edge_length,
                             Scalar approx_error, unsigned int iterations = 10,
-                            bool use_projection = true);
+                            bool use_projection = true, std::string ear = "none");
 
 private:
-    void preprocessing();
+    void preprocessing(std::string ear);
     void postprocessing();
 
     void split_long_edges();

@@ -292,16 +292,17 @@ void MeshProcessingViewer::process_imgui()
 
     if (ImGui::CollapsingHeader("Remeshing"))
     {
+
+        auto bb = mesh_.bounds();
+
         if (ImGui::Button("Adaptive Remeshing"))
         {
-            auto bb = mesh_.bounds().size();
-
             try
             {
                 SurfaceRemeshing(mesh_).adaptive_remeshing(
-                    0.001 * bb,  // min length
-                    1.0 * bb,    // max length
-                    0.001 * bb); // approx. error
+                    0.001 * bb.size(),  // min length
+                    1.0 * bb.size(),    // max length
+                    0.001 * bb.size()); // approx. error
             }
             catch (const InvalidInputException& e)
             {
@@ -328,6 +329,45 @@ void MeshProcessingViewer::process_imgui()
                 std::cerr << e.what() << std::endl;
                 return;
             }
+            update_mesh();
+        }
+
+        static float min_EL = 0.8, max_EL = 10.0, app_error = 0.8;
+
+        ImGui::PushItemWidth(200);
+        ImGui::InputFloat("min", &min_EL, 0.001f, 1.0f, "%.3f");
+
+        ImGui::PushItemWidth(200);
+        ImGui::InputFloat("max", &max_EL, 0.001f, 1.0f, "%.3f");
+
+        ImGui::PushItemWidth(200);
+        ImGui::InputFloat("error", &app_error, 0.001f, 1.0f, "%.3f");
+
+        static std::string ear[] = {"left", "right"};
+        static int ear_idx = 0;
+
+        ImGui::RadioButton("right", &ear_idx, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton("left", &ear_idx, 0);
+
+        if (ImGui::Button("Combined Remeshing"))
+        {
+            try
+            {
+                SurfaceRemeshing(mesh_).adaptive_remeshing(
+                    min_EL ,  // min length
+                    max_EL ,    // max length
+                    app_error,  // approx. error
+                    10U,
+                    true,
+                    ear[ear_idx]); 
+            }
+            catch (const InvalidInputException& e)
+            {
+                std::cerr << e.what() << std::endl;
+                return;
+            }
+            
             update_mesh();
         }
     }
