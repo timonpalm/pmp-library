@@ -370,6 +370,50 @@ void MeshProcessingViewer::process_imgui()
             
             update_mesh();
         }
+
+        if (ImGui::Button("show edge length"))
+        {
+
+            auto edgeLength = mesh_.add_vertex_property<Scalar>("v:el");
+            for (auto v : mesh_.vertices())
+            {
+                int cnt = 0;
+                float sum = 0;
+                for (auto hedge : mesh_.halfedges(v))
+                {
+                    sum += mesh_.edge_length(mesh_.edge(hedge));
+                    cnt++;
+                }
+
+                edgeLength[v] = sum / cnt;
+            }
+
+            // sort curvature values
+            std::vector<Scalar> values;
+            values.reserve(mesh_.n_vertices());
+            for (auto v : mesh_.vertices())
+            {
+                values.push_back(edgeLength[v]);
+            }
+
+            std::sort(values.rbegin(), values.rend());
+
+            Scalar kmax = values[0];
+
+            // generate 1D texture coordiantes
+            auto tex = mesh_.vertex_property<TexCoord>("v:tex");
+
+            for (auto v : mesh_.vertices())
+            {
+                //std::cout << (edgeLength[v] -kmin)/kmin << std::endl;
+                tex[v] = TexCoord(1-(edgeLength[v]/kmax), 0.0);   
+            }
+            
+            mesh_.remove_vertex_property<Scalar>(edgeLength);
+
+            update_mesh();
+            set_draw_mode("Texture");
+        }
     }
 
     ImGui::Spacing();
