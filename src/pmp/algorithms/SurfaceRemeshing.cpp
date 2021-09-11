@@ -161,7 +161,7 @@ void SurfaceRemeshing::preprocessing(std::string ear)
         // prefer tensor analysis over cotan-Laplace, since the former is more
         // robust and gives better results on the boundary.
         SurfaceCurvature curv(mesh_);
-        curv.analyze_tensor(1);
+        curv.analyze_tensor(1, true);
 
         auto bb = mesh_.bounds();
         std::string unit = "mm";
