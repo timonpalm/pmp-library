@@ -332,7 +332,7 @@ void MeshProcessingViewer::process_imgui()
             update_mesh();
         }
 
-        static float min_EL = 0.8, max_EL = 10.0, app_error = 0.8;
+        static float min_EL = 0.5, max_EL = 5.0, app_error = 0.5;
 
         ImGui::PushItemWidth(200);
         ImGui::InputFloat("min", &min_EL, 0.001f, 1.0f, "%.3f");
@@ -350,7 +350,7 @@ void MeshProcessingViewer::process_imgui()
         ImGui::SameLine();
         ImGui::RadioButton("left", &ear_idx, 0);
 
-        if (ImGui::Button("Combined Remeshing"))
+        if (ImGui::Button("Hybrid HRTF Mesh Grading"))
         {
             try
             {
